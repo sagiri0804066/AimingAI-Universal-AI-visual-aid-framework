@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>aiming AI</title>
+    
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/warn.css">
+
+    <script src="/js/warn.js" defer></script>
+    <script type="module" src="/js/app.js" defer></script>
+</head>
+<body>
+    <main class="app-container">
+        <header class="app-header">
+            <h1>aiming AI</h1>
+            <p>v 1.0.0</p>
+            <p>一个基于YOLO的AI自瞄程序</p>
+        </header>
+
+        <section class="core-controls">
+            <div class="form-group">
+                <label for="model-select">选择模型</label>
+                <select id="model-select" class="form-select">
+                    <!-- 选项将由JS动态生成 -->
+                </select>
+            </div>
+            <div class="model-actions">
+                <label for="import-model-input" class="btn btn-secondary">导入模型</label>
+                <input type="file" id="import-model-input" accept=".pt,.onnx" hidden>
+                <button id="manage-models-btn" class="btn btn-secondary">管理模型</button>
+            </div>
+        </section>
+
+        <section class="settings-content">
+            <div class="form-group">
+                <label for="hotkey-listener">触发热键</label>
+                <input type="text" id="hotkey-listener" class="form-input" placeholder="点击以设置热键" readonly>
+            </div>
+
+            <div class="form-group slider-group">
+                <label for="range-width-slider">识别范围 <span class="tooltip" data-tooltip="截图的宽度和高度">?</span></label>
+                <div class="slider-input-wrapper">
+                    <span class="slider-prefix">宽</span>
+                    <input type="range" id="range-width-slider" min="100" max="1920" value="800">
+                    <input type="number" id="range-width-input" class="slider-number-input" min="100" max="1920" value="800">
+                </div>
+                <div class="slider-input-wrapper">
+                    <span class="slider-prefix">高</span>
+                    <input type="range" id="range-height-slider" min="100" max="1080" value="600">
+                    <input type="number" id="range-height-input" class="slider-number-input" min="100" max="1080" value="600">
+                </div>
+            </div>
+
+            <div class="form-group slider-group">
+                <label for="aim-speed-slider">瞄准速度 <span class="tooltip" data-tooltip="准星移动到目标的速度，数值越大越快">?</span></label>
+                <div class="slider-input-wrapper">
+                    <input type="range" id="aim-speed-slider" min="1" max="100" value="50">
+                    <input type="number" id="aim-speed-input" class="slider-number-input" min="1" max="100" value="50">
+                </div>
+            </div>
+
+            <div class="form-group slider-group">
+                <label>瞄准偏移量 <span class="tooltip" data-tooltip="微调准星的最终位置，用于修正模型误差">?</span></label>
+                <div class="slider-input-wrapper">
+                    <span class="slider-prefix">X</span>
+                    <input type="range" id="offset-x-slider" min="-50" max="50" value="0">
+                    <input type="number" id="offset-x-input" class="slider-number-input" min="-50" max="50" value="0">
+                </div>
+                <div class="slider-input-wrapper">
+                    <span class="slider-prefix">Y</span>
+                    <input type="range" id="offset-y-slider" min="-50" max="50" value="0">
+                    <input type="number" id="offset-y-input" class="slider-number-input" min="-50" max="50" value="0">
+                </div>
+            </div>
+            
+            <div class="form-group toggle-group">
+                <label for="showScopeToggle" class="toggle-switch">
+                    <input type="checkbox" id="showScopeToggle" checked>
+                    <span class="toggle-slider"></span>
+                    范围显示框
+                </label>
+            </div>
+
+            <div class="form-group toggle-group">
+                    <label for="enableDrawToggle" class="toggle-switch">
+                        <input type="checkbox" id="enableDrawToggle" checked>
+                    <span class="toggle-slider"></span>
+                    启用目标绘制
+                </label>
+            </div>
+        </section>
+
+        <footer class="app-footer">
+            <button id="start-btn" class="btn btn-primary">开始推理</button>
+            <button id="stop-btn" class="btn btn-danger" style="display: none;">结束推理</button>
+        </footer>
+    </main>
+
+    <!-- 模型管理弹窗 (Modal) -->
+    <div id="manage-models-modal" class="modal-overlay" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>管理模型</h2>
+                <button id="modal-close-btn" class="close-btn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <ul id="model-list" class="model-list">
+                    <!-- 模型列表将由JS动态生成 -->
+                </ul>
+            </div>
+        </div>
+    </div>
+    <footer class="site-footer">
+        <p><strong>MIT开源项目声明</strong></p>
+        <p>
+            本项目根据 <a href="https://opensource.org/licenses/MIT" target="_blank" rel="noopener noreferrer">MIT 许可证</a>
+            Copyright (c) 2025 Lulu 发布。详情请见 <code>LICENSE</code> 文件。
+        </p>
+    </footer>
+</body>
+</html>

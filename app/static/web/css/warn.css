@@ -1,0 +1,240 @@
+/* --- Notification Toast Styles --- */
+.notification-container {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    pointer-events: none;
+    width: auto;
+    max-width: 90%;
+}
+
+.notification-toast {
+    box-sizing: border-box;
+    max-width: 640px;
+    width: auto;
+    min-width: 300px;
+    padding: 15px 40px 15px 20px;
+    border-radius: 8px;
+    display: flex;
+    align-items: flex-start;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    position: relative;
+    opacity: 0;
+    transform: translateY(-20px);
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    pointer-events: auto;
+    overflow: hidden;
+    border: 1px solid transparent;
+}
+
+.notification-toast.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.notification-toast.status-0 { /* Red */
+    background-color: #fff1f0; /* 淡红背景 */
+    border-color: #ffccc7;   /* 稍深红边框 */
+    color: #a8071a;          /* 深红文字 */
+}
+.notification-toast.status-1 { /* Yellow */
+    background-color: #fffbe6; /* 淡黄背景 */
+    border-color: #ffe58f;   /* 稍深黄边框 */
+    color: #ad6800;          /* 深黄/橙文字 */
+}
+.notification-toast.status-2 { /* Green */
+    background-color: #f6ffed; /* 淡绿背景 */
+    border-color: #d9f7be;   /* 稍深绿边框 */
+    color: #237804;          /* 深绿文字 */
+}
+
+.notification-icon {
+    flex-shrink: 0;
+    margin-right: 15px;
+    margin-top: 2px;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.notification-icon svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+.notification-icon svg path {
+    fill: currentColor;
+}
+
+.notification-content {
+    flex-grow: 1;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    line-height: 1.5;
+    padding-right: 5px;
+}
+
+.notification-close {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+    opacity: 0.6;
+    transition: opacity 0.2s;
+    background: none;
+    border: none;
+    padding: 0;
+    color: inherit;
+}
+.notification-close:hover {
+    opacity: 1;
+}
+.notification-close svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+    fill: currentColor;
+}
+
+.confirmation-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.6);
+    z-index: 1050;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+}
+
+.confirmation-overlay.visible {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.confirmation-modal {
+    background-color: white;
+    padding: 25px;
+    border-radius: 10px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    width: 80%;
+    max-width: 600px;
+    position: relative;
+    transform: scale(0.9);
+    transition: transform 0.3s ease, width 0.3s ease;
+    box-sizing: border-box;
+}
+
+.confirmation-overlay.visible .confirmation-modal {
+    transform: scale(1);
+}
+
+.confirmation-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 20px;
+    position: relative;
+    padding-right: 30px;
+}
+
+.confirmation-header-icon {
+    width: 24px;
+    height: 24px;
+    margin-right: 10px;
+    flex-shrink: 0;
+}
+.confirmation-header-icon svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+.confirmation-header-icon svg path {
+    fill: #ad6800;
+}
+
+
+.confirmation-title {
+    font-size: 1.2em;
+    font-weight: bold;
+    color: #333;
+}
+
+.confirmation-modal-close {
+    position: absolute;
+    top: -10px;
+    right: -10px;
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+    opacity: 0.7;
+    transition: opacity 0.2s;
+    background: none;
+    border: none;
+    padding: 0;
+}
+.confirmation-modal-close:hover {
+    opacity: 1;
+}
+.confirmation-modal-close svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+    fill: #666;
+}
+
+.confirmation-content {
+    margin-bottom: 25px;
+    color: #555;
+    line-height: 1.6;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+}
+
+.confirmation-footer {
+    text-align: right;
+}
+
+.confirmation-button {
+    padding: 8px 18px;
+    border-radius: 5px;
+    border: 1px solid transparent;
+    cursor: pointer;
+    font-size: 0.9em;
+    margin-left: 10px;
+    transition: background-color 0.2s, border-color 0.2s, color 0.2s;
+}
+
+.confirmation-button.cancel {
+    background-color: #fff;
+    border-color: #ccc;
+    color: #333;
+}
+.confirmation-button.cancel:hover {
+    background-color: #f8f8f8;
+    border-color: #bbb;
+}
+
+.confirmation-button.confirm {
+    background-color: #007bff;
+    border-color: #007bff;
+    color: white;
+}
+.confirmation-button.confirm:hover {
+    background-color: #0056b3;
+    border-color: #0056b3;
+}
