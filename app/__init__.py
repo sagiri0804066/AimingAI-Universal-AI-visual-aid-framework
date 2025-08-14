@@ -35,15 +35,21 @@ def create_app(gui_controller=None, scaling_factor=1.0, logitech_manager=None):
     if not os.path.exists(app.config['CONFIG_FILE']):
         print(f"配置文件不存在，正在创建默认配置...")
         default_config = {
-            "model": "",
-            "hotkey": "Q",
-            "showScope": True,
-            "enableDraw": True,
+            "model": "MRZH.pt",
+            "hotkey": "CapsLock",
             "rangeWidth": "320",
             "rangeHeight": "320",
-            "aimSpeed": "10",
+            "aimSpeed": "20",
             "offsetX": "0",
-            "offsetY": "0"
+            "offsetY": "0",
+            "confidenceThreshold": "0.30",
+            "iouThreshold": "0.45",
+            "maxDetection": "10",
+            "imageSize": "640",
+            "showScope": True,
+            "enableDraw": True,
+            "fp16": True,
+            "augment": False
         }
         with open(app.config['CONFIG_FILE'], 'w', encoding='utf-8') as f:
             json.dump(default_config, f, indent=4)

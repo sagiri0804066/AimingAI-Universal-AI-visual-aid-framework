@@ -2,12 +2,17 @@ import * as api from './requests.js';
 
 class UIManager {
     constructor() {
-        this.models = {}; 
+        this.models = {};
         this.cacheDOMElements();
         this.isInferenceRunning = false;
         this.isListeningHotkey = false;
+        this.isAdvancedView = false;
         this.currentHotkey = { keys: [], display: "" };
         this.debouncedSaveConfig = this.debounce(this.saveCurrentConfig, 500);
+
+        this.pressedKeys = new Set();
+        this.boundHandleKeydown = this.handleKeydown.bind(this);
+        this.boundHandleKeyup = this.handleKeyup.bind(this);
     }
 
     cacheDOMElements() {
@@ -17,18 +22,24 @@ class UIManager {
         this.importModelInput = document.getElementById('import-model-input');
         this.manageModelsBtn = document.getElementById('manage-models-btn');
         this.hotkeyListener = document.getElementById('hotkey-listener');
-        
+
         this.elements = {
             rangeWidth: { slider: document.getElementById('range-width-slider'), input: document.getElementById('range-width-input') },
             rangeHeight: { slider: document.getElementById('range-height-slider'), input: document.getElementById('range-height-input') },
             aimSpeed: { slider: document.getElementById('aim-speed-slider'), input: document.getElementById('aim-speed-input') },
             offsetX: { slider: document.getElementById('offset-x-slider'), input: document.getElementById('offset-x-input') },
             offsetY: { slider: document.getElementById('offset-y-slider'), input: document.getElementById('offset-y-input') },
+            confidenceThreshold: { slider: document.getElementById('confidence-threshold-slider'), input: document.getElementById('confidence-threshold-input') },
+            iouThreshold: { slider: document.getElementById('iou-threshold-slider'), input: document.getElementById('iou-threshold-input') },
+            maxDetection: { slider: document.getElementById('max-detection-slider'), input: document.getElementById('max-detection-input') },
+            imageSize: { input: document.getElementById('image-size-input') },
         };
-        
+
         this.toggles = {
             showScope: document.getElementById('showScopeToggle'),
             enableDraw: document.getElementById('enableDrawToggle'),
+            fp16: document.getElementById('fp16-toggle'),
+            augment: document.getElementById('augment-toggle'),
         };
 
         this.startBtn = document.getElementById('start-btn');
@@ -36,8 +47,11 @@ class UIManager {
         this.modal = document.getElementById('manage-models-modal');
         this.modalCloseBtn = document.getElementById('modal-close-btn');
         this.modelList = document.getElementById('model-list');
+        this.advancedSettingsBtn = document.getElementById('advanced-settings-btn');
+        this.advancedSettingsPanel = document.getElementById('advanced-settings');
+        this.separator = document.querySelector('.separator');
     }
-    
+
     async init() {
         try {
             console.log("UI Manager Initializing...");
@@ -52,6 +66,128 @@ class UIManager {
         }
     }
 
+    initEventListeners() {
+        for (const key in this.elements) {
+            const el = this.elements[key];
+            if (el.slider && el.input) {
+                this.setupTwoWayBinding(el.slider, el.input);
+            } else if (el.input) {
+                el.input.addEventListener('change', () => this.debouncedSaveConfig());
+                el.input.addEventListener('input', () => this.debouncedSaveConfig());
+            }
+        }
+        for (const key in this.toggles) {
+            if (this.toggles[key]) {
+                this.toggles[key].addEventListener('change', () => this.debouncedSaveConfig());
+            }
+        }
+        
+        this.modelSelect.addEventListener('change', () => this.debouncedSaveConfig());
+        this.hotkeyListener.addEventListener('click', this.startHotkeyListen.bind(this));
+        document.addEventListener('click', (e) => {
+            if (this.isListeningHotkey && e.target !== this.hotkeyListener) {
+                this.stopHotkeyListen();
+            }
+        });
+        
+        this.startBtn.addEventListener('click', this.startInference.bind(this));
+        this.stopBtn.addEventListener('click', this.stopInference.bind(this));
+        this.importModelInput.addEventListener('change', this.handleModelImport.bind(this));
+        this.manageModelsBtn.addEventListener('click', this.openModelManager.bind(this));
+        this.modalCloseBtn.addEventListener('click', this.closeModelManager.bind(this));
+        this.modal.addEventListener('click', (e) => {
+            if (e.target === this.modal) {
+                this.closeModelManager();
+            }
+        });
+        this.modelList.addEventListener('click', this.handleModelDelete.bind(this));
+        this.advancedSettingsBtn.addEventListener('click', this.toggleAdvancedView.bind(this));
+    }
+
+    startHotkeyListen(e) {
+        e.stopPropagation();
+        if (this.isListeningHotkey) return;
+
+        this.isListeningHotkey = true;
+        this.pressedKeys.clear();
+        this.hotkeyListener.value = "请按下组合键...";
+        this.hotkeyListener.classList.add('is-listening');
+
+        document.addEventListener('keydown', this.boundHandleKeydown, { capture: true });
+        document.addEventListener('keyup', this.boundHandleKeyup, { capture: true });
+    }
+
+    stopHotkeyListen() {
+        if (!this.isListeningHotkey) return;
+
+        this.isListeningHotkey = false;
+
+        if (this.pressedKeys.size > 0) {
+             this.currentHotkey.display = this.formatKeys(this.pressedKeys);
+             this.currentHotkey.keys = Array.from(this.pressedKeys);
+        }
+
+        this.hotkeyListener.value = this.currentHotkey.display || "";
+        if (!this.hotkeyListener.value) {
+            this.hotkeyListener.placeholder = "点击以设置热键";
+        }
+        this.hotkeyListener.classList.remove('is-listening');
+
+        document.removeEventListener('keydown', this.boundHandleKeydown, { capture: true });
+        document.removeEventListener('keyup', this.boundHandleKeyup, { capture: true });
+        
+        this.debouncedSaveConfig();
+    }
+
+    handleKeydown(e) {
+        e.preventDefault();
+        e.stopPropagation();
+
+        const key = this.normalizeKey(e.key);
+        this.pressedKeys.add(key);
+        
+        this.hotkeyListener.value = this.formatKeys(this.pressedKeys);
+    }
+    
+    handleKeyup(e) {
+        e.preventDefault();
+        e.stopPropagation();
+
+        if (this.pressedKeys.size > 0) {
+            this.stopHotkeyListen();
+        }
+    }
+    
+    normalizeKey(key) {
+        key = key.trim();
+        if (key.length === 1) return key.toUpperCase();
+
+        const keyMap = {
+            "Control": "Ctrl",
+            " ": "Space"
+        };
+        let normalized = keyMap[key] || key.charAt(0).toUpperCase() + key.slice(1);
+        return normalized.replace('Arrow', '');
+    }
+
+    formatKeys(keySet) {
+        const modifierOrder = ['Ctrl', 'Alt', 'Shift', 'Meta'];
+        const modifiers = [];
+        const mainKeys = [];
+
+        keySet.forEach(key => {
+            if (modifierOrder.includes(key)) {
+                modifiers.push(key);
+            } else {
+                mainKeys.push(key);
+            }
+        });
+        
+        modifiers.sort((a, b) => modifierOrder.indexOf(a) - modifierOrder.indexOf(b));
+        
+        return [...modifiers, ...mainKeys].join(' + ');
+    }
+    
     async loadAndApplyConfig() {
         const config = await api.loadConfig();
         if (config.model && this.models[config.model]) {
@@ -62,9 +198,19 @@ class UIManager {
             this.currentHotkey.display = config.hotkey;
         }
         for (const key in this.elements) {
-            if (config[key] !== undefined) {
-                this.elements[key].slider.value = config[key];
-                this.elements[key].input.value = config[key];
+            if (config[key] !== undefined && this.elements[key].input) {
+                 if (key.includes('Threshold')) {
+                    const value = Math.round(parseFloat(config[key]) * 100);
+                    this.elements[key].input.value = value;
+                    if (this.elements[key].slider) {
+                        this.elements[key].slider.value = value;
+                    }
+                 } else {
+                    this.elements[key].input.value = config[key];
+                    if (this.elements[key].slider) {
+                        this.elements[key].slider.value = config[key];
+                    }
+                }
             }
         }
         for (const key in this.toggles) {
@@ -79,39 +225,12 @@ class UIManager {
         this.renderModelOptions();
     }
     
-    initEventListeners() {
-        for (const key in this.elements) {
-            this.setupTwoWayBinding(this.elements[key].slider, this.elements[key].input);
-        }
-        for (const key in this.toggles) {
-            if (this.toggles[key]) {
-                 this.toggles[key].addEventListener('change', () => this.debouncedSaveConfig());
-            }
-        }
-        this.modelSelect.addEventListener('change', () => this.debouncedSaveConfig());
-        this.hotkeyListener.addEventListener('click', this.startHotkeyListen.bind(this));
-        document.addEventListener('click', (e) => {
-            if (this.isListeningHotkey && e.target !== this.hotkeyListener) this.stopHotkeyListen();
-        });
-        this.startBtn.addEventListener('click', this.startInference.bind(this));
-        this.stopBtn.addEventListener('click', this.stopInference.bind(this));
-        this.importModelInput.addEventListener('change', this.handleModelImport.bind(this));
-        this.manageModelsBtn.addEventListener('click', this.openModelManager.bind(this));
-        this.modalCloseBtn.addEventListener('click', this.closeModelManager.bind(this));
-        this.modal.addEventListener('click', (e) => {
-            if (e.target === this.modal) this.closeModelManager();
-        });
-        this.modelList.addEventListener('click', this.handleModelDelete.bind(this));
-    }
-
     setupTwoWayBinding(slider, input) {
         const onValueChange = () => this.debouncedSaveConfig();
-        
         slider.addEventListener('input', () => {
             input.value = slider.value;
             onValueChange();
         });
-        
         input.addEventListener('input', () => {
             let value = parseInt(input.value, 10);
             const min = parseInt(input.min, 10);
@@ -120,7 +239,6 @@ class UIManager {
                 slider.value = Math.max(min, Math.min(max, value));
             }
         });
-        
         input.addEventListener('change', () => {
             let value = parseInt(input.value, 10);
             if (isNaN(value) || input.value === '') {
@@ -134,10 +252,8 @@ class UIManager {
     async handleModelImport(e) {
         const file = e.target.files[0];
         if (!file) return;
-
         const formData = new FormData();
         formData.append('model', file);
-
         try {
             window.showNotification(1, `正在上传模型 "${file.name}"...`, 2000);
             await api.uploadModel(formData);
@@ -153,12 +269,9 @@ class UIManager {
     async handleModelDelete(e) {
         const deleteBtn = e.target.closest('.delete-model-btn');
         if (!deleteBtn) return;
-
         const modelKey = deleteBtn.dataset.modelKey;
         const modelName = this.models[modelKey]?.name || modelKey;
-        
         const confirmed = await window.showConfirmation(`您确定要永久删除模型 <strong>"${modelName}"</strong> 吗？此操作无法撤销。`);
-        
         if (confirmed) {
             try {
                 await api.deleteModel(modelKey);
@@ -182,7 +295,7 @@ class UIManager {
             window.showNotification(0, `启动推理失败: ${error.message}`);
         }
     }
-    
+
     async stopInference() {
         if (!this.isInferenceRunning) return;
         try {
@@ -214,51 +327,6 @@ class UIManager {
         this.elements.rangeHeight.slider.max = screenHeight;
         this.elements.rangeHeight.input.max = screenHeight;
     }
-
-    startHotkeyListen(e) {
-        e.stopPropagation();
-        if (this.isListeningHotkey) return;
-        this.isListeningHotkey = true;
-        this.hotkeyListener.value = "请按下组合键...";
-        this.hotkeyListener.classList.add('is-listening');
-        this.currentHotkey.keys = [];
-        this.currentHotkey.display = "";
-        document.addEventListener('keydown', this.handleKeydown.bind(this), { capture: true });
-    }
-
-    stopHotkeyListen() {
-        if (!this.isListeningHotkey) return;
-        this.isListeningHotkey = false;
-        this.hotkeyListener.value = this.currentHotkey.display || "";
-        if (this.hotkeyListener.value === "") {
-            this.hotkeyListener.placeholder = "点击以设置热键";
-        }
-        this.hotkeyListener.classList.remove('is-listening');
-        document.removeEventListener('keydown', this.handleKeydown.bind(this), { capture: true });
-        this.debouncedSaveConfig();
-    }
-
-    handleKeydown(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        const keys = new Set();
-        if (e.ctrlKey) keys.add('Ctrl');
-        if (e.altKey) keys.add('Alt');
-        if (e.shiftKey) keys.add('Shift');
-        if (e.metaKey) keys.add('Meta');
-        const mainKey = e.key.toUpperCase();
-        if (!['CONTROL', 'ALT', 'SHIFT', 'META'].includes(mainKey) && mainKey.trim() !== '') {
-            keys.add(mainKey.replace('ARROW', ''));
-        }
-        if (keys.size > 0) {
-            this.currentHotkey.keys = Array.from(keys);
-            this.currentHotkey.display = this.currentHotkey.keys.join(' + ');
-            this.hotkeyListener.value = this.currentHotkey.display;
-        }
-        if (!['Control', 'Alt', 'Shift', 'Meta'].includes(e.key)) {
-            this.stopHotkeyListen();
-        }
-    }
     
     renderModelOptions() {
         const selectedValue = this.modelSelect.value;
@@ -284,13 +352,7 @@ class UIManager {
             const model = this.models[key];
             const li = document.createElement('li');
             li.className = 'model-list-item';
-            li.innerHTML = `
-                <div class="model-info">
-                    <div class="name">${model.name}</div>
-                    <div class="size">${model.size}</div>
-                </div>
-                <button class="delete-model-btn" data-model-key="${key}" title="删除模型">&times;</button>
-            `;
+            li.innerHTML = `<div class="model-info"><div class="name">${model.name}</div><div class="size">${model.size}</div></div><button class="delete-model-btn" data-model-key="${key}" title="删除模型">&times;</button>`;
             this.modelList.appendChild(li);
         });
     }
@@ -306,31 +368,46 @@ class UIManager {
         this.body.classList.remove('modal-open');
     }
 
-getCurrentSettings() {
-    const settings = {
-        model: this.modelSelect.value,
-
-        hotkey: this.hotkeyListener.value,
-    };
-
-    for (const key in this.elements) {
-        if (this.elements[key] && this.elements[key].input) {
-            settings[key] = this.elements[key].input.value;
-        }
-    }
-
-    for (const key in this.toggles) {
-        const toggleElement = this.toggles[key];
-        if (toggleElement) {
-            settings[key] = toggleElement.checked;
+    toggleAdvancedView() {
+        this.isAdvancedView = !this.isAdvancedView;
+        if (this.isAdvancedView) {
+            this.appContainer.classList.add('advanced-view-active');
+            this.separator.style.display = 'block';
+            this.advancedSettingsPanel.style.display = 'flex';
+            this.advancedSettingsBtn.textContent = '收起高级设置';
         } else {
-            settings[key] = false;
+            this.appContainer.classList.remove('advanced-view-active');
+            this.separator.style.display = 'none';
+            this.advancedSettingsPanel.style.display = 'none';
+            this.advancedSettingsBtn.textContent = '高级设置';
         }
     }
-    console.log("正在发送到后端的设置:", settings);
-    
-    return settings;
-}
+
+    getCurrentSettings() {
+        const settings = {
+            model: this.modelSelect.value,
+            hotkey: this.hotkeyListener.value,
+        };
+        for (const key in this.elements) {
+            if (this.elements[key] && this.elements[key].input) {
+                if (key.includes('Threshold')) {
+                     settings[key] = (parseFloat(this.elements[key].input.value) / 100).toFixed(2);
+                } else {
+                     settings[key] = this.elements[key].input.value;
+                }
+            }
+        }
+        for (const key in this.toggles) {
+            const toggleElement = this.toggles[key];
+            if (toggleElement) {
+                settings[key] = toggleElement.checked;
+            } else {
+                settings[key] = false;
+            }
+        }
+        console.log("正在发送到后端的设置:", settings);
+        return settings;
+    }
 
     updateUIForStateChange() {
         if (this.isInferenceRunning) {

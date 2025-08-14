@@ -41,10 +41,16 @@ body.modal-open {
     box-shadow: var(--shadow);
     padding: 24px 32px;
     width: 100%;
-    max-width: 420px;
+    max-width: 420px; /* 初始宽度 */
     display: flex;
     flex-direction: column;
     gap: 16px;
+    transition: max-width 0.4s ease-in-out; /* 宽度变化动画 */
+}
+
+/* 高级视图激活时的容器样式 */
+.app-container.advanced-view-active {
+    max-width: 900px; /* 展开后的宽度 */
 }
 
 .app-header h1 { font-size: 28px; margin: 0 0 4px 0; color: var(--text-color); }
@@ -58,10 +64,38 @@ body.modal-open {
 
 /* --- 设置内容区域 --- */
 .settings-content {
+    display: flex; /* 改为 flex 布局以容纳左右两栏 */
+    flex-direction: row;
+    gap: 24px;
+}
+
+/* 设置栏样式 */
+.settings-column {
     display: flex;
     flex-direction: column;
     gap: 14px;
+    flex: 1; /* 每栏占据一半空间 */
+    min-width: 0; /* 防止内容溢出 */
 }
+
+/* 右侧高级设置栏的淡入动画 */
+@keyframes fade-in {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+
+#advanced-settings {
+    animation: fade-in 0.4s ease-in-out;
+}
+
+/* 分割线样式 */
+.separator {
+    width: 1px;
+    background-color: var(--border-color);
+    align-self: stretch; /* 充满父容器高度 */
+    animation: fade-in 0.4s ease-in-out;
+}
+
 
 /* --- 表单组与通用输入 --- */
 .form-group {
@@ -217,6 +251,25 @@ input[type="range"]:active::-webkit-slider-thumb {
     transform: scale(1.2);
 }
 
+/* --- 水平排列的控制按钮区域 --- */
+.settings-actions {
+    display: flex;
+    justify-content: space-between; /* 均分间隙 */
+    align-items: center;
+    gap: 15px;
+    margin-top: 4px;
+}
+.settings-actions .toggle-group {
+    margin: 0; /* 移除 toggle-group 的默认外边距 */
+    flex-shrink: 0; /* 防止开关被压缩 */
+}
+.settings-actions .btn {
+    padding: 8px 16px;
+    font-size: 14px;
+    flex-grow: 1; /* 让按钮填充部分剩余空间 */
+    text-align: center;
+}
+
 /* --- 开关组件 (Toggle Switch) --- */
 .toggle-group {
     align-items: flex-start;
@@ -326,7 +379,8 @@ input:checked + .toggle-slider::before { transform: translateX(20px); }
 
 /* 禁用状态 */
 .app-container.is-inferencing .core-controls,
-.app-container.is-inferencing .settings-content {
+.app-container.is-inferencing .settings-content,
+.app-container.is-inferencing .settings-actions { /* 也禁用新的动作区域 */
     opacity: 0.5;
     pointer-events: none;
 }

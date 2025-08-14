@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>aiming AI</title>
+    <title>Aiming AI</title>
     
     <link rel="stylesheet" href="/css/style.css">
     <link rel="stylesheet" href="/css/warn.css">
@@ -14,7 +14,7 @@
 <body>
     <main class="app-container">
         <header class="app-header">
-            <h1>aiming AI</h1>
+            <h1>Aiming AI</h1>
             <p>v 1.0.0</p>
             <p>一个基于YOLO的AI自瞄程序</p>
         </header>
@@ -34,47 +34,104 @@
         </section>
 
         <section class="settings-content">
-            <div class="form-group">
-                <label for="hotkey-listener">触发热键</label>
-                <input type="text" id="hotkey-listener" class="form-input" placeholder="点击以设置热键" readonly>
+            <!-- 左侧基础设置 -->
+            <div class="settings-column" id="basic-settings">
+                <div class="form-group">
+                    <label for="hotkey-listener">触发热键</label>
+                    <input type="text" id="hotkey-listener" class="form-input" placeholder="点击以设置热键" readonly>
+                </div>
+
+                <div class="form-group slider-group">
+                    <label for="range-width-slider">识别范围 <span class="tooltip" data-tooltip="截图的宽度和高度">?</span></label>
+                    <div class="slider-input-wrapper">
+                        <span class="slider-prefix">宽</span>
+                        <input type="range" id="range-width-slider" min="100" max="1920" value="800">
+                        <input type="number" id="range-width-input" class="slider-number-input" min="100" max="1920" value="800">
+                    </div>
+                    <div class="slider-input-wrapper">
+                        <span class="slider-prefix">高</span>
+                        <input type="range" id="range-height-slider" min="100" max="1080" value="600">
+                        <input type="number" id="range-height-input" class="slider-number-input" min="100" max="1080" value="600">
+                    </div>
+                </div>
+
+                <div class="form-group slider-group">
+                    <label for="aim-speed-slider">瞄准速度 <span class="tooltip" data-tooltip="准星移动到目标的速度，数值越大越快">?</span></label>
+                    <div class="slider-input-wrapper">
+                        <input type="range" id="aim-speed-slider" min="1" max="100" value="50">
+                        <input type="number" id="aim-speed-input" class="slider-number-input" min="1" max="100" value="50">
+                    </div>
+                </div>
+
+                <div class="form-group slider-group">
+                    <label>瞄准偏移量 <span class="tooltip" data-tooltip="微调准星的最终位置，用于修正模型误差">?</span></label>
+                    <div class="slider-input-wrapper">
+                        <span class="slider-prefix">X</span>
+                        <input type="range" id="offset-x-slider" min="-50" max="50" value="0">
+                        <input type="number" id="offset-x-input" class="slider-number-input" min="-50" max="50" value="0">
+                    </div>
+                    <div class="slider-input-wrapper">
+                        <span class="slider-prefix">Y</span>
+                        <input type="range" id="offset-y-slider" min="-50" max="50" value="0">
+                        <input type="number" id="offset-y-input" class="slider-number-input" min="-50" max="50" value="0">
+                    </div>
+                </div>
             </div>
 
-            <div class="form-group slider-group">
-                <label for="range-width-slider">识别范围 <span class="tooltip" data-tooltip="截图的宽度和高度">?</span></label>
-                <div class="slider-input-wrapper">
-                    <span class="slider-prefix">宽</span>
-                    <input type="range" id="range-width-slider" min="100" max="1920" value="800">
-                    <input type="number" id="range-width-input" class="slider-number-input" min="100" max="1920" value="800">
-                </div>
-                <div class="slider-input-wrapper">
-                    <span class="slider-prefix">高</span>
-                    <input type="range" id="range-height-slider" min="100" max="1080" value="600">
-                    <input type="number" id="range-height-input" class="slider-number-input" min="100" max="1080" value="600">
-                </div>
-            </div>
+            <!-- 分割线 -->
+            <div class="separator" style="display: none;"></div>
 
-            <div class="form-group slider-group">
-                <label for="aim-speed-slider">瞄准速度 <span class="tooltip" data-tooltip="准星移动到目标的速度，数值越大越快">?</span></label>
-                <div class="slider-input-wrapper">
-                    <input type="range" id="aim-speed-slider" min="1" max="100" value="50">
-                    <input type="number" id="aim-speed-input" class="slider-number-input" min="1" max="100" value="50">
+            <!-- 右侧高级设置 (已根据最新要求修改) -->
+            <div class="settings-column" id="advanced-settings" style="display: none;">
+                <div class="form-group slider-group">
+                    <label for="confidence-threshold-slider">置信度阈值 <span class="tooltip" data-tooltip="模型认为检测结果是目标的可能性。值越高，误报越少，但可能漏掉不明显的目标。">?</span></label>
+                    <div class="slider-input-wrapper">
+                        <input type="range" id="confidence-threshold-slider" min="1" max="100" value="25">
+                        <input type="number" id="confidence-threshold-input" class="slider-number-input" min="1" max="100" value="25">
+                    </div>
                 </div>
-            </div>
+                
+                <div class="form-group slider-group">
+                    <label for="iou-threshold-slider">IoU 阈值 <span class="tooltip" data-tooltip="衡量预测框重叠程度的指标。值越高，对位置精度要求越严，能更好地区分重叠目标。">?</span></label>
+                    <div class="slider-input-wrapper">
+                        <input type="range" id="iou-threshold-slider" min="1" max="100" value="45">
+                        <input type="number" id="iou-threshold-input" class="slider-number-input" min="1" max="100" value="45">
+                    </div>
+                </div>
 
-            <div class="form-group slider-group">
-                <label>瞄准偏移量 <span class="tooltip" data-tooltip="微调准星的最终位置，用于修正模型误差">?</span></label>
-                <div class="slider-input-wrapper">
-                    <span class="slider-prefix">X</span>
-                    <input type="range" id="offset-x-slider" min="-50" max="50" value="0">
-                    <input type="number" id="offset-x-input" class="slider-number-input" min="-50" max="50" value="0">
+                <div class="form-group slider-group">
+                    <label for="max-detection-slider">最大检测数 <span class="tooltip" data-tooltip="单次推理最多识别的目标数量。根据游戏情况和性能调整。">?</span></label>
+                    <div class="slider-input-wrapper">
+                        <input type="range" id="max-detection-slider" min="1" max="100" value="10">
+                        <input type="number" id="max-detection-input" class="slider-number-input" min="1" max="100" value="10">
+                    </div>
                 </div>
-                <div class="slider-input-wrapper">
-                    <span class="slider-prefix">Y</span>
-                    <input type="range" id="offset-y-slider" min="-50" max="50" value="0">
-                    <input type="number" id="offset-y-input" class="slider-number-input" min="-50" max="50" value="0">
+
+                <div class="form-group">
+                    <label for="image-size-input">图像尺寸 (px) <span class="tooltip" data-tooltip="推理前图像被缩放到的尺寸。通常是模型训练时的尺寸（如640），影响精度和速度。">?</span></label>
+                    <input type="number" id="image-size-input" class="form-input" value="640" min="320" step="32">
+                </div>
+                
+                <div class="form-group toggle-group">
+                    <label for="fp16-toggle" class="toggle-switch">
+                        <input type="checkbox" id="fp16-toggle" checked>
+                        <span class="toggle-slider"></span>
+                        半精度 (FP16) <span class="tooltip" data-tooltip="使用16位浮点数进行推理，可显著提升速度（尤其在支持的GPU上），但可能带来微小的精度损失。">?</span>
+                    </label>
+                </div>
+
+                 <div class="form-group toggle-group">
+                    <label for="augment-toggle" class="toggle-switch">
+                        <input type="checkbox" id="augment-toggle">
+                        <span class="toggle-slider"></span>
+                        增强推理 <span class="tooltip" data-tooltip="在推理时对图像进行数据增强（如翻转），可能提高检测的鲁棒性，但会增加耗时。">?</span>
+                    </label>
                 </div>
             </div>
-            
+        </section>
+
+        <!-- 水平排列的控制按钮区域 -->
+        <section class="settings-actions">
             <div class="form-group toggle-group">
                 <label for="showScopeToggle" class="toggle-switch">
                     <input type="checkbox" id="showScopeToggle" checked>
@@ -82,14 +139,14 @@
                     范围显示框
                 </label>
             </div>
-
             <div class="form-group toggle-group">
-                    <label for="enableDrawToggle" class="toggle-switch">
-                        <input type="checkbox" id="enableDrawToggle" checked>
+                <label for="enableDrawToggle" class="toggle-switch">
+                    <input type="checkbox" id="enableDrawToggle" checked>
                     <span class="toggle-slider"></span>
-                    启用目标绘制
+                    目标绘制
                 </label>
             </div>
+            <button id="advanced-settings-btn" class="btn btn-secondary">高级设置</button>
         </section>
 
         <footer class="app-footer">

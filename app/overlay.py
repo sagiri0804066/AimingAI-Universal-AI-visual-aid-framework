@@ -1,5 +1,3 @@
-import sys
-import threading
 from PyQt6.QtWidgets import QApplication, QWidget
 from PyQt6.QtGui import QPainter, QColor, QPen, QFont
 from PyQt6.QtCore import Qt, QObject, pyqtSignal, pyqtSlot, QRect, QPoint
