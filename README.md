@@ -67,7 +67,7 @@
 
 ### 第二步：下载本项目
 ```bash
-git clone https://github.com/sagiri0804066/Aiming-AI---AI-.git
+git clone https://github.com/sagiri0804066/AimingAI-Universal-AI-visual-aid-framework.git
 ```
 
 ### 第三步：一键部署环境
